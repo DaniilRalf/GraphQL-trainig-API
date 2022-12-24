@@ -1,12 +1,22 @@
 import {ApolloServer} from "apollo-server";
 
-let _id = 1
-let photos = [{id: 1, name: 'dfgsd', description: 'dfsfd'}]
-
 /**
- * В данной конфигурацииприменяем ЕНАМ, который бкдет определять категорию нашего фото
- * И для нашей мутации выносим тип входящих данных в отдельный тип
+ * В этой конфигурации рассматривается связь многие ко многим
  * */
+
+let _id = 1
+let users = [
+    {githubLogin: "login1", name: 'name1'},
+    {githubLogin: "login2", name: 'name2'},
+    {githubLogin: "login3", name: 'name3'},
+]
+let photos = [
+    {id: 1, name: 'name1', description: 'desc1', category: 'ACTION', githubUser: 'login2'},
+    {id: 1, name: 'name1', description: 'desc1', category: 'ACTION', githubUser: 'login2'},
+    {id: 1, name: 'name1', description: 'desc1', category: 'ACTION', githubUser: 'login3'},
+]
+
+
 const typeDefs = `
     type Photo {
         id: ID!
@@ -14,16 +24,16 @@ const typeDefs = `
         name: String!
         description: String
         category: PhotoCategory!
+        postedBy: User!
     }
-    type Query {
-        totalPhotos: Int!
-        allPhotos: [Photo!]!
-    }
-    type Mutation {
-        postPhoto(input: PhotoCategoryInput!): Photo!
+    type User {
+        githubLogin: ID!
+        name: String
+        avatar: String
+        postedPhotos: [Photo!]!
     }
     
-    
+ 
     input PhotoCategoryInput {
         name: String!
         description: String
@@ -38,25 +48,35 @@ const typeDefs = `
         LANDSCAPE
         GRAPHIC
     }
+    
+    
+    type Query {
+        totalPhotos: Int!
+        allPhotos: [Photo!]!
+    }
+    type Mutation {
+        postPhoto(input: PhotoCategoryInput!): Photo!
+    }
 `
-/**
- * Расмотрим пример когда у нас в обьекте отсутствует метод который должен быть не нулевым(url)
- * Для того чтоы определать его динамически пожем создать РАспознователь напрямую в резолвере
- * Тогда при каждом запросе где фигурирует данный тип мы будем обращатся к этому индивидуальному распознователю
- * и проверять наличие этого метода
- * */
+
 const resolvers = {
     Photo: {
-        url: parent => `http://sadfasdf/${parent.id}.com`
+        url: parent => `http://sadfasdf/${parent.id}.com`,
+        postedBy: parent => {
+            return users.find(u => u.githubLogin === parent.githubUser)
+        }
     },
+    User: {
+        postedPhotos: parent => {
+            return photos.find(p => p.githubUser === parent.githubLogin)
+        }
+    },
+
+
     Query: {
         totalPhotos: () => photos.length,
         allPhotos: () => photos,
     },
-    /**
-     * ПОскольку мы оперделититип входящих данный конкретной схемой
-     * наши данные переместились на уровень ниже в теле args, а именно в input
-     * */
     Mutation: {
         postPhoto(parent, args) {
             let newPhoto = {
