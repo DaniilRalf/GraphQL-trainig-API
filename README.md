@@ -21,12 +21,12 @@
 ## Передача данных
 Названия Запросов и Мутаций могут быть любыми, однако внутри необходимо указывать имена схемы\распознаателя\
 **Query(из первого файла)**\
-![img.png](screenshots/img.png)
+![img.png](screenshots/img.png)\
 **Mutation(из первого файла)**\
-![img_1.png](screenshots/img_1.png)
+![img_1.png](screenshots/img_1.png)\
 (с переменными)(из первого файла)\
-![img.png](screenshots/img_3.png)
+![img.png](screenshots/img_3.png)\
 (с переменными обусловлеными конкретной схемой типов)(из второго файла)\
-![img.png](screenshots/img_4.png)
-
+![img.png](screenshots/img_4.png)\
+.
 
