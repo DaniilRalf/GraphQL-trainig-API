@@ -1,6 +1,10 @@
 import {ApolloServer} from "apollo-server";
 
-
+/**
+ * В этой конфигурации рассматривается связь многие ко многим
+ * Ничего особенного, просто добавляется дополнительная таблица для связей между таблицами
+ * Добавляются дополнительные кастомные Распознователи
+ * */
 
 let _id = 1
 let users = [
@@ -13,6 +17,10 @@ let photos = [
     {id: 2, name: 'name2', description: 'desc2', category: 'ACTION'},
     {id: 3, name: 'name3', description: 'desc3', category: 'ACTION'},
 ]
+/**
+ * Так-же нет необходимости добавлять в Схему tags,
+ * поскольку на практике его нет необходимости передавать на клиент
+ * */
 let tags = [
     {photoId: 1, userId: 1},
     {photoId: 2, userId: 2},
