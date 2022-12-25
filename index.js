@@ -1,129 +1,29 @@
-import {ApolloServer} from "apollo-server";
-import {GraphQLScalarType} from "graphql";
+import {ApolloServer} from "apollo-server-express"
+import express from 'express'
+import {typeDefs} from "./typeDefs.js";
+import {resolvers} from "./resolvers.js";
 
-/**
- * Рассматриваем кастомные литаралы
- * Пример стандартных литералов - ID, String, Int...
- * Сделаем DataTime
- * */
 
-let _id = 1
-let users = [
-    {githubLogin: 1, name: 'name1'},
-    {githubLogin: 2, name: 'name2'},
-    {githubLogin: 3, name: 'name3'},
-]
-/**
- * Для теста добавим поле created
- * */
-let photos = [
-    {id: 1, name: 'name1', description: 'desc1', category: 'ACTION', created: '3-28-1977'},
-    {id: 2, name: 'name2', description: 'desc2', category: 'ACTION', created: '1-2-1977'},
-    {id: 3, name: 'name3', description: 'desc3', category: 'ACTION', created: '2018-04-14T19:09:57.308Z'},
-]
-let tags = [
-    {photoId: 1, userId: 1},
-    {photoId: 2, userId: 2},
-    {photoId: 3, userId: 3},
-]
-
-/**
- * Указываем наличие скаляра в схеме
- * */
-const typeDefs = `
-    scalar DateTime
-    type Photo {
-        id: ID!
-        url: String!
-        name: String!
-        description: String
-        category: PhotoCategory!
-        taggedUsers: [User]
-        created: DateTime!
-    }
-    type User {
-        githubLogin: ID!
-        name: String
-        avatar: String
-        inPhotos: [Photo]
-    }
-    
- 
-    input PhotoCategoryInput {
-        name: String!
-        description: String
-        category: PhotoCategory=PORTRAIT
-    }
-    
-    
-    enum PhotoCategory {
-        SELFIE
-        PORTRAIT
-        ACTION
-        LANDSCAPE
-        GRAPHIC
-    }
-    
-    
-    type Query {
-        totalPhotos: Int!
-        allPhotos: [Photo!]!
-    }
-    type Mutation {
-        postPhoto(input: PhotoCategoryInput!): Photo!
-    }
-`
-
-const resolvers = {
-    Photo: {
-        url: parent => `http://sadfasdf/${parent.id}.com`,
-        taggedUsers: parent => tags
-            .filter(tag => tag.photoId === parent.id)
-            .map(tag => tag.userId)
-            .map(userId => users.find(u => u.githubLogin === userId))
-    },
-    User: {
-        inPhotos: parent => tags
-            .filter(tag => tag.userId === parent.id)
-            .map(tag => tag.photoId)
-            .map(photoId => photos.find(p => p.id === photoId))
-    },
-
+async function startApolloServer() {
     /**
-     * По аналогии из второго примера
-     * Для того чтоы определать DateTime, тривиальный Распознователь в резолвере
-     * Тогда при каждом запросе где фигурирует данный тип мы будем обращатся к этому тривиальному распознователю и проверять наличие этого метода
+     * вызываем express для инициализации приложения
      * */
-    DateTime: new GraphQLScalarType({
-        name: 'DateTime',
-        description: 'A valid date time value',
-        parseValue: value => new Date(value),
-        serialize: value => new Date(value).toISOString(),
-        parseLiteral: ast => ast.value
-    }),
+    const app = express();
+    const server = new ApolloServer({
+        typeDefs,
+        resolvers,
+    });
+    await server.start();
+    /**
+     * интеграция ApolloServer с express
+     * */
+    server.applyMiddleware({ app });
 
-
-    Query: {
-        totalPhotos: () => photos.length,
-        allPhotos: () => photos,
-    },
-    Mutation: {
-        postPhoto(parent, args) {
-            let newPhoto = {
-                id: _id++,
-                ...args.input,
-                created: new Date()
-            }
-            photos.push(newPhoto)
-            return newPhoto
-        }
-    }
+    app.listen({port: 4000}, () => {
+        console.log(`GraphGQ start on http://localhost:4000${server.graphqlPath}`)
+    })
+    app.get('/', (req, res) => {
+        return res.end('Welcome to API')
+    })
 }
-
-const server = new ApolloServer({
-    typeDefs: typeDefs,
-    resolvers: resolvers
-})
-server.listen().then(data => {
-    console.log(`GraphGQ start on ${data.url}`)
-})
+startApolloServer()
